@@ -10,13 +10,6 @@ speed become **measurements**, and the moments you blow past a physiological lim
 become **issues**. There's even a synthesized mobile **Session Replay** that flies
 through the route on a map while HR and pace tick along the bottom.
 
-It is **sport‑agnostic from the first line.** There are no `if sport == "cycling"`
-branches anywhere. Every threshold is derived from the activity's *own* data
-distribution — redline is a heart‑rate percentile, a surge is a speed percentile,
-terrain is measured by grade. So a road ride, an open‑water swim, and a mountain
-hike all run through the exact same code path and each produces sport‑appropriate
-results.
-
 ## The mapping
 
 | Human telemetry | Sentry primitive |
@@ -70,31 +63,9 @@ SENTRY_DSN="https://…" python sentry_ingest.py --send --shift
 SENTRY_DSN="https://…" python replay_spike.py data/your_ride.fit
 ```
 
-## Files
+<img width="1240" height="720" alt="replay" src="https://github.com/user-attachments/assets/f81d8231-4fa1-4e0b-af15-97f2de2355b4" />
+<img width="1228" height="682" alt="errors" src="https://github.com/user-attachments/assets/8c1d9374-d877-49ad-9571-5b7a33e56478" />
 
-- **`inventory.py`** — read‑only dump of what a FIT file contains. No Sentry, no network.
-- **`activity.py`** — the sport‑agnostic core: load → smooth altitude → segment by
-  terrain/stops → detect events, all with thresholds derived from the file's own data.
-- **`sentry_ingest.py`** — turns one activity into a trace (per‑segment spans +
-  measurements) and each detected event into a fingerprinted issue.
-- **`basemap.py`** — stitches CartoDB dark map tiles under the route (Web Mercator)
-  and returns a lat/lng → pixel projector. Tiles are cached on disk.
-- **`replay_spike.py`** — renders a portrait "phone screen" video that flies through
-  the whole ride, then sends it as a mobile Session Replay linked to the trace.
-
-## Two hard‑won gotchas (so you don't have to rediscover them)
-
-**Mobile video replays are one envelope item, not three.** A native/mobile video
-replay is a *single* `replay_video` envelope item whose payload is a msgpack map
-`{replay_event, replay_recording, replay_video}`. Sending three separate items gets
-you a `200` followed by a silent drop (`InvalidItemCount`) inside Relay.
-
-**The replay→trace link is event‑driven, not `trace_ids`‑driven.** The replay's
-Trace tab doesn't read the replay's `trace_ids` field. It searches the spans dataset
-for `replay.id:<id>` inside the replay's time window. So the *transaction* has to
-carry `contexts.replay.replay_id` (Relay copies it onto the spans), and the trace has
-to overlap the replay's window — which is why `replay_spike.py` compresses the whole
-ride into the same short window as the video and pads the window start.
 
 ## Notes
 
