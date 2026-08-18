@@ -1,0 +1,2 @@
+# Drop your own .fit exports here (Garmin Connect / Strava → "Export Original").
+# They are gitignored — workout files contain GPS traces of where you live.

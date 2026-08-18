@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Personal data — NEVER commit workout files (they contain your GPS/home location)
+data/*.fit
+*.fit
+
+# Generated artifacts
+.tiles/
+spike_frame.png
+spike_segment.mp4
+_basemap_test.png
+*.mp4
+*.png
+!docs/*.png

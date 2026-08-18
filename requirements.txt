@@ -1,0 +1,14 @@
+# Read FIT workout files
+fitparse>=1.2.0
+
+# Send traces / issues / replays to Sentry
+sentry-sdk>=2.68.0
+
+# Msgpack envelope for the mobile video replay
+msgpack>=1.0.0
+
+# Render the replay frames + encode the mp4
+Pillow>=10.0.0
+numpy>=1.24.0
+imageio>=2.30.0
+imageio-ffmpeg>=0.5.0
