@@ -69,10 +69,15 @@ def build_plan(path: str, end_at: datetime | None = None) -> dict | None:
     elapsed = (real_end - real_start).total_seconds()
     moving = sum(s["data"]["duration_s"] for s in spans
                  if not s["op"].endswith("stop"))
+    dist_m = samples[-1].dist or 0
+    max_speed = max((s.speed for s in samples if s.speed is not None), default=0)
     measurements = {
-        "distance": (round((samples[-1].dist or 0) / 1000.0, 2), "kilometer"),
+        "distance": (round(dist_m / 1000.0, 2), "kilometer"),
         "elapsed": (round(elapsed / 60, 1), "minute"),
         "moving": (round(moving / 60, 1), "minute"),
+        # km/h; query in Explore as tags[max_speed,number]:>40 (see send_plan)
+        "avg_speed": (round(dist_m / moving * 3.6, 1), "none") if moving else (0, "none"),
+        "max_speed": (round(max_speed * 3.6, 1), "none"),
         "avg_hr": (round(sum(hrs) / len(hrs), 0), "none") if hrs else (0, "none"),
         "max_hr": (max(hrs), "none") if hrs else (0, "none"),
         "segments": (len(segs), "none"),
@@ -143,8 +148,14 @@ def send_plan(plan: dict, trace_id: str | None = None,
         # makes the transaction's spans carry the `replay.id` attribute the
         # replay Trace tab filters on, so this trace links back to the replay
         tx.set_context("replay", {"replay_id": replay_id})
+    # set_data (not the deprecated set_measurement): these land as custom span
+    # attributes on the transaction segment, which is what the Traces/Explore
+    # spans dataset actually searches. Query a numeric one with the typed-tag
+    # syntax, e.g. tags[max_speed,number]:>40 — the ,number suffix is required
+    # (a bare key resolves as a string and won't match). set_measurement instead
+    # writes measurements.*, which the spans dataset rejects as an unknown key.
     for k, (v, unit) in plan["measurements"].items():
-        tx.set_measurement(k, v, unit)
+        tx.set_data(k, v)
     for s in plan["spans"]:
         span = tx.start_child(op=s["op"], description=s["description"],
                               start_timestamp=s["start"])
